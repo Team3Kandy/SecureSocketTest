@@ -42,20 +42,38 @@ public class MyFakeTrustSocketFactory implements SecureSocketFactory {
      */
     protected SSLContext getContext() throws Exception {
 
-        try {
-            SSLContext sc = SSLContext.getInstance("SSL");
+        SSLContext sslContext = javax.net.ssl.SSLContext.getInstance("TLS","BCJSSE");
+        String kf = "D:\\git_repos\\chap8.keystore";
+        //   String keyStoreFilePath = "C:\\Program Files\\Java\\jdk1.8.0_144\\jre\\lib\\security\\cacerts";
+        String keyStoreFilePassword = "changeit";
+        File keystoreFile = new File(kf);
+        if(!keystoreFile.exists() || keystoreFile.isDirectory())
+            return null;
 
-            sc.init(null, // we don't need no stinkin KeyManager
-                    new TrustManager[]{new MyFakeTrustSocketFactory.MyFakeX509TrustManager()},
-                    new java.security.SecureRandom());
-            if (log.isDebugEnabled()) {
-                log.debug(Messages.getMessage("My fake Socket Factory get context "));
-            }
-            return sc;
-        } catch (Exception exc) {
-            log.error(Messages.getMessage("My fake Socket Factory get context Exception"), exc);
-            throw new Exception(Messages.getMessage("ftsf02"));
+        KeyStore keyStore = KeyStore.getInstance("JKS", "SUN");
+        FileInputStream fin = new FileInputStream(kf);
+        System.err.println("Key Store Loading ... ");
+        System.err.println("Key Store type: " + keyStore.getType() + " Provider: " + keyStore.getProvider().getName());
+        keyStore.load(fin, keyStoreFilePassword.toCharArray());
+        System.err.println("Key Store Loaded .");
+        TrustManagerFactory tmf = TrustManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
+        System.err.println("Trust manager Factory Algorithm: " + tmf.getAlgorithm() + " Provider: " + tmf.getProvider());
+        tmf.init(keyStore);
+        System.err.println("Trust manager Factory initialized");
+        TrustManager[] trustManagers = tmf.getTrustManagers();
+        System.err.println("Trust Managers : ");
+        for (TrustManager trustmanager :
+                trustManagers) {
+            System.err.println(trustmanager.toString());
         }
+        System.err.println("SSl Context initializing ...");
+        sslContext.init(null,
+                trustManagers,
+                new java.security.SecureRandom() );
+        System.err.println("SSl context Params: \n\t\t" +
+                sslContext.getProvider().getName() + "\n\t\t" +
+                sslContext.getProtocol());
+        return sslContext;
     }
     protected SSLSocketFactory sslFactory = null;
     protected void initFactory() throws IOException {
@@ -72,23 +90,15 @@ public class MyFakeTrustSocketFactory implements SecureSocketFactory {
      * @throws Exception
      */
     public Socket create(String host, int port, StringBuffer otherHeaders, BooleanHolder useFullURL) throws Exception {
-        SSLContext sslContext = javax.net.ssl.SSLContext.getInstance("TLS","BCJSSE");
-        String kf = "D:\\git_repos\\chap8.keystore";
-     //   String keyStoreFilePath = "C:\\Program Files\\Java\\jdk1.8.0_144\\jre\\lib\\security\\cacerts";
-        String keyStoreFilePassword = "changeit";
-        File keystoreFile = new File(kf);
-        if(!keystoreFile.exists() || keystoreFile.isDirectory())
-            return null;
-
-        KeyStore keyStore = KeyStore.getInstance("JKS", "SUN");
-        FileInputStream fin = new FileInputStream(kf);
-        keyStore.load(fin, keyStoreFilePassword.toCharArray());
-        TrustManagerFactory tmf = TrustManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
-        tmf.init(keyStore);
-
-        sslContext.init(null,
-                tmf.getTrustManagers(),
-                new java.security.SecureRandom() );
+        System.err.println("Socket Creation Started");
+        SSLContext sslContext = getContext();
+        System.err.println("SSL Context Succesfuly created");
+        sslFactory = sslContext.getSocketFactory();
+        System.err.println("Supported Cipher Suites : ");
+        for (String str :
+                sslFactory.getSupportedCipherSuites()) {
+            System.err.println(str);
+        }
         sslFactory = sslContext.getSocketFactory();
         if (port == -1) {
             port = 443;
@@ -100,8 +110,9 @@ public class MyFakeTrustSocketFactory implements SecureSocketFactory {
         boolean hostInNonProxyList = false;
         Socket sslSocket = null;
         if (tcp.getProxyHost().length() == 0 || hostInNonProxyList) {
-            // direct SSL connection
+            System.err.println("Socket Creating ... ");
             sslSocket = sslFactory.createSocket(host, port);
+            System.err.println("Socket Created.");
         }
         else {
 
@@ -196,73 +207,12 @@ public class MyFakeTrustSocketFactory implements SecureSocketFactory {
             }
         }
 
+        System.err.println("Handshake Started");
         ((SSLSocket) sslSocket).startHandshake();
-        if (log.isDebugEnabled()) {
-            log.debug(Messages.getMessage("createdSSL00"));
-        }
+        System.err.println("Handshake");
+        System.out.println("Created Socket Properties: ");
+        System.out.println("\t\t\t" + sslContext.getProtocol());
+        System.out.println("\t\t\t" + sslContext.getProvider().getName());
         return sslSocket;
-    }
-
-    /**
-     * Class FakeX509TrustManager
-     */
-    public static class MyFakeX509TrustManager implements X509TrustManager {
-
-        /** Field log           */
-        protected static Log log =
-                LogFactory.getLog(MyFakeTrustSocketFactory.MyFakeX509TrustManager.class.getName());
-
-        /**
-         * Method isClientTrusted
-         *
-         * @param chain
-         *
-         * @return
-         */
-        public boolean isClientTrusted(java.security.cert
-                                               .X509Certificate[] chain) {
-
-            if (log.isDebugEnabled()) {
-                log.debug(Messages.getMessage("my fake trust manager is client trusted"));
-            }
-            return true;
-        }
-
-        /**
-         * Method isServerTrusted
-         *
-         * @param chain
-         *
-         * @return
-         */
-        public boolean isServerTrusted(java.security.cert
-                                               .X509Certificate[] chain) {
-
-            if (log.isDebugEnabled()) {
-                log.debug(Messages.getMessage("my fake trust manager is server trusted"));
-            }
-            return true;
-        }
-        //TODO :
-        public void checkClientTrusted(X509Certificate[] x509Certificates, String s) throws CertificateException {
-            return;
-        }
-        //TODO :
-        public void checkServerTrusted(X509Certificate[] x509Certificates, String s) throws CertificateException {
-            return;
-        }
-
-        /**
-         * Method getAcceptedIssuers
-         *
-         * @return
-         */
-        public java.security.cert.X509Certificate[] getAcceptedIssuers() {
-
-            if (log.isDebugEnabled()) {
-                log.debug(Messages.getMessage("My Fake Trust manager get accepted issuers"));
-            }
-            return null;
-        }
     }
 }

@@ -174,3 +174,6 @@ fabric.properties
 hs_err_pid*
 
 # End of https://www.gitignore.io/api/java,eclipse,intellij
+TestSecure/lib/commons-io-2\.6/docs/
+
+TestSecure/lib/commons-io-2\.6/
