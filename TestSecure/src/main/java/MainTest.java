@@ -14,8 +14,9 @@ import java.util.HashMap;
 public class MainTest {
 
     public static void main(String argv[]) {
+        System.err.println("Requesting server info user");
         A2SopiWSClient wsClient = new A2SopiServerInfoUserSvcWSClient();
-        System.out.println(makeWSCall("u1061@spidr.com", "1234", null, wsClient));
+        System.err.println("Response : " + makeWSCall("u1061@spidr.com", "1234", null, wsClient).values().toArray()[0]);
 
     }
 
@@ -91,7 +92,7 @@ public class MainTest {
                     org.apache.axis.transport.http.HTTPConstants.HEADER_PROTOCOL_V11);
             Stub.class.cast(service).setTimeout(5000);
 
-                System.out.println("Used A2 getServices to get assigned services for  " + a2UserName + " from "
+                System.err.println("Used A2 getServices to get assigned services for  " + a2UserName + " from "
                         + paAddress.getHost() + ":" + paAddress.getPort());
 
 

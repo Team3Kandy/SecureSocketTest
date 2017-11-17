@@ -44,14 +44,14 @@ public class MyFakeTrustSocketFactory implements SecureSocketFactory {
 
         SSLContext sslContext = javax.net.ssl.SSLContext.getInstance("TLS","BCJSSE");
         String kf = "D:\\git_repos\\chap8.keystore";
-        //   String keyStoreFilePath = "C:\\Program Files\\Java\\jdk1.8.0_144\\jre\\lib\\security\\cacerts";
+        String keyStoreFilePath = "C:\\Program Files\\Java\\jdk1.8.0_144\\jre\\lib\\security\\cacerts";
         String keyStoreFilePassword = "changeit";
-        File keystoreFile = new File(kf);
+        File keystoreFile = new File(keyStoreFilePath);
         if(!keystoreFile.exists() || keystoreFile.isDirectory())
             return null;
 
         KeyStore keyStore = KeyStore.getInstance("JKS", "SUN");
-        FileInputStream fin = new FileInputStream(kf);
+        FileInputStream fin = new FileInputStream(keyStoreFilePath);
         System.err.println("Key Store Loading ... ");
         System.err.println("Key Store type: " + keyStore.getType() + " Provider: " + keyStore.getProvider().getName());
         keyStore.load(fin, keyStoreFilePassword.toCharArray());
@@ -210,9 +210,9 @@ public class MyFakeTrustSocketFactory implements SecureSocketFactory {
         System.err.println("Handshake Started");
         ((SSLSocket) sslSocket).startHandshake();
         System.err.println("Handshake");
-        System.out.println("Created Socket Properties: ");
-        System.out.println("\t\t\t" + sslContext.getProtocol());
-        System.out.println("\t\t\t" + sslContext.getProvider().getName());
+        System.err.println("Created Socket Properties: ");
+        System.err.println("\t\t\t" + sslContext.getProtocol());
+        System.err.println("\t\t\t" + sslContext.getProvider().getName());
         return sslSocket;
     }
 }
